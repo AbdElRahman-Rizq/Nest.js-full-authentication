@@ -1,10 +1,13 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { AuthDto } from './dto/auth.dto';
-import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'prisma/prisma.service';
+import { hashingPassword, comparingPassword } from './authHelper';
+
+import {JwtService} from "@nestjs/jwt"
+import { Jwt_Secret } from 'src/utils/constant';
 @Injectable()
 export class AuthService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService,private readonly jwt:JwtService) {}
   // Sign up Function
   async signUp(dto: AuthDto) {
     const { email, password } = dto;
@@ -12,7 +15,7 @@ export class AuthService {
     if (foundUser) {
       throw new BadRequestException('Email is already exists');
     }
-    const hashedPassword = await this.hashingPassword(password);
+    const hashedPassword = await hashingPassword(password);
     await this.prisma.user.create({
       data: {
         email,
@@ -31,25 +34,19 @@ export class AuthService {
       throw new BadRequestException('Wrong Email or Passwprd');
     }
     // Check Password
-    const isMAtch = await this.comparingPassword({
+    const isMAtch = await comparingPassword({
         password,
         hashed: foundUser.hashedPassword,
     });
     if (!isMAtch) {
       throw new BadRequestException('Wrong Email or Passwprd');
     }
-    return `SignIn with ${email}`;
+    const token=await this.signToken({id:foundUser.id,email:foundUser.email});
+    return {token};
   }
-  // Function for hashing passwords
-  async hashingPassword(params: string) {
-    const saltOrRounds = 10;
-
-    const hashedPass = await bcrypt.hash(params, saltOrRounds);
-    return hashedPass;
-  }
-
-  // Function for comparing between the password with hashed password
-  async comparingPassword(args: { password: string; hashed: string }) {
-    return await bcrypt.compare(args.password, args.hashed);
-  }
+  // Function for creating token when login
+  signToken(args: { id: string; email: string }) {
+    const payload=args;
+   return  this.jwt.signAsync(payload,{secret:Jwt_Secret})
+}
 }
