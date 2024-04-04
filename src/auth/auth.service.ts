@@ -1,13 +1,14 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
 import { AuthDto } from './dto/auth.dto';
 import { PrismaService } from 'prisma/prisma.service';
 import { hashingPassword, comparingPassword } from './authHelper';
 
 import {JwtService} from "@nestjs/jwt"
 import { Jwt_Secret } from 'src/utils/constant';
+import { Request, Response } from 'express';
 @Injectable()
 export class AuthService {
-  constructor(private readonly prisma: PrismaService,private readonly jwt:JwtService) {}
+  constructor(private readonly prisma: PrismaService,private jwt:JwtService) {}
   // Sign up Function
   async signUp(dto: AuthDto) {
     const { email, password } = dto;
@@ -26,7 +27,7 @@ export class AuthService {
   }
 
   // Sign In Function
-  async signIn(dto: AuthDto) {
+  async signIn(dto: AuthDto,req:Request,res:Response) {
     const { email, password } = dto;
     // Check Email
     const foundUser = await this.prisma.user.findUnique({ where: { email } });
@@ -42,11 +43,15 @@ export class AuthService {
       throw new BadRequestException('Wrong Email or Passwprd');
     }
     const token=await this.signToken({id:foundUser.id,email:foundUser.email});
-    return {token};
+    if (!token) {
+      throw new ForbiddenException();
+    }
+    res.cookie("token",token)
+    return res.send({message:"Logged in Successfully"});
   }
   // Function for creating token when login
-  signToken(args: { id: string; email: string }) {
+  async signToken(args: { id: string; email: string }) {
     const payload=args;
-   return  this.jwt.signAsync(payload,{secret:Jwt_Secret})
+   return await  this.jwt.signAsync(payload,{secret:Jwt_Secret})
 }
 }
