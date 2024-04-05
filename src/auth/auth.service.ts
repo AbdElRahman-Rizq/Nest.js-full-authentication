@@ -49,6 +49,11 @@ export class AuthService {
     res.cookie("token",token)
     return res.send({message:"Logged in Successfully"});
   }
+//   sign out 
+async signOut(req:Request,res:Response){
+res.clearCookie("token")
+return "Logged out"
+}
   // Function for creating token when login
   async signToken(args: { id: string; email: string }) {
     const payload=args;
