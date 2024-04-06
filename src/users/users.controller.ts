@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from 'src/auth/jwt.guard';
+import { Request } from 'express';
 
 @Controller('users')
 export class UsersController {
@@ -17,10 +18,11 @@ export class UsersController {
   findAll() {
     return this.usersService.findAll();
   }
-@UseGuards(JwtAuthGuard)
+
+@UseGuards(JwtAuthGuard) // to check the token
   @Get(':id')
-  findOne(@Param('id') id: number) { // Specify the type of id as number
-    return this.usersService.findOne(id); // Convert id to string before passing it to findOne
+  findOne(@Param('id') id: number,@Req() req:Request) { 
+    return this.usersService.findOne(id,req); 
   }
 
   @Patch(':id')
