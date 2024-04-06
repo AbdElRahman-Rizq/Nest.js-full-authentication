@@ -27,11 +27,11 @@ async findOne(id: number,req:Request) { // Change the type of id to number
     throw new NotFoundException(`User with ID ${id} not found`);
   }
 // Checing the Token to forbidden any user to see the data
-const decodedUser=req.user as{id:string,email:string}
+const decodedUser=req.user as{id:string,email:string} // From the token (Payload in validate in jwt.strategy.ts file) 
 if(foundUser.id!=decodedUser.id){
 throw new ForbiddenException("Not authorized")
 }
-delete foundUser.hashedPassword
+delete foundUser.hashedPassword // Display the data without the hased password
   return foundUser;
 }
   update(id: number, updateUserDto: UpdateUserDto) {
