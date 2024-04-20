@@ -2,37 +2,35 @@ import { Body, Controller, Get, Post, Req, Res } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthDto } from './dto/auth.dto';
 import { Request, Response } from 'express';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
-
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
-  @Post("signup")
-  signup(@Body() dto:AuthDto){
-    return this.authService.signUp(dto)
-  }
-  @Post("signIn")
-  async signIn(@Body() dto: AuthDto, @Req() req: Request, @Res() res: Response) { // Define types for req and res
-    try {
-      // Call the signIn method of the authService
-      const result = await this.authService.signIn(dto, req, res);
 
-      // If the signIn method returns a result, send it as a response
-      if (result) {
-        res.send(result);
-      } else {
-        // Handle the case when signIn method returns nothing
-        res.status(500).send('Internal Server Error');
-      }
-    } catch (error) {
-      // Handle any errors that occur during sign-in
-      res.status(400).send(error.message);
-    }
+  @Post('signup')
+  @ApiOperation({ summary: 'User sign up' })
+  @ApiResponse({ status: 201, description: 'User signed up successfully' })
+  @ApiResponse({ status: 400, description: 'Email is already exists' })
+  async signup(@Body() dto: AuthDto) {
+    return await this.authService.signUp(dto);
   }
 
-  @Get("signOut")
-   async signOut(@Req() req:Request,@Res() res:Response){
-    const result =await this.authService.signOut(req,res)
-    res.send(result);
+  @Post('signin')
+  @ApiOperation({ summary: 'User sign in' })
+  @ApiResponse({ status: 200, description: 'Logged in successfully' })
+  @ApiResponse({ status: 400, description: 'Wrong email or password' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  async signIn(@Body() dto: AuthDto, @Req() req: Request, @Res() res: Response) {
+    return await this.authService.signIn(dto, req, res);
+  }
+
+  @Get('signout')
+  @ApiOperation({ summary: 'User sign out' })
+  @ApiResponse({ status: 200, description: 'Logged out successfully' })
+  async signOut(@Req() req: Request, @Res() res: Response) {
+    const result = await this.authService.signOut(req, res);
+    return res.send(result);
   }
 }
